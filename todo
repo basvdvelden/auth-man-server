@@ -1,0 +1,3 @@
+jwt secret must be set in either a properties file or an environment variable
+
+cors config in security config set path to something?
