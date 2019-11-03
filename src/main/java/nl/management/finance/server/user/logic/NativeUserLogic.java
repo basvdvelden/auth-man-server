@@ -1,6 +1,7 @@
 package nl.management.finance.server.user.logic;
 
 import nl.management.finance.server.user.exceptions.AuthenticationFailedException;
+import nl.management.finance.server.user.models.GoogleRegistrationForm;
 import nl.management.finance.server.user.models.NativeUser;
 import nl.management.finance.server.user.models.NativeUserAuthForm;
 import nl.management.finance.server.user.models.NativeUserRegistrationForm;
@@ -8,17 +9,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.UUID;
 
-public class UserLogic {
+public class NativeUserLogic {
     private NativeUserRegistrationForm registrationForm;
     private NativeUserAuthForm authForm;
     private PasswordEncoder encoder;
 
-    public UserLogic(NativeUserRegistrationForm form, PasswordEncoder encoder) {
+    public NativeUserLogic(NativeUserRegistrationForm form, PasswordEncoder encoder) {
         this.registrationForm = form;
         this.encoder = encoder;
     }
 
-    public UserLogic(NativeUserAuthForm form, PasswordEncoder encoder) {
+    public NativeUserLogic(NativeUserAuthForm form, PasswordEncoder encoder) {
         this.authForm = form;
         this.encoder = encoder;
     }

@@ -7,6 +7,7 @@ import nl.management.finance.server.common.jwt.exceptions.RefreshTokenExpiredExc
 import nl.management.finance.server.common.jwt.exceptions.InvalidRefreshTokenException;
 import nl.management.finance.server.common.jwt.models.RefreshToken;
 import nl.management.finance.server.common.jwt.models.RefreshTokenValue;
+import nl.management.finance.server.user.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -56,10 +57,10 @@ public class RefreshTokenService {
         return refreshToken;
     }
 
-    public RefreshToken toEntity(UUID userUuid, RefreshTokenValue refreshTokenValue) {
+    public RefreshToken toEntity(User user, RefreshTokenValue refreshTokenValue) {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setToken(refreshTokenValue.getValue());
-        refreshToken.setUserUuid(userUuid);
+        refreshToken.setUserUuid(user.getUuid());
         refreshToken.setExpires(LocalDateTime.now().plusYears(1L));
 
         return refreshToken;
@@ -75,7 +76,7 @@ public class RefreshTokenService {
         }
     }
 
-    public RefreshTokenValue getRefreshTokenValue() {
+    public RefreshTokenValue createRefreshTokenValue() {
         return RefreshTokenValueGenerator.getRefreshTokenValue();
     }
 

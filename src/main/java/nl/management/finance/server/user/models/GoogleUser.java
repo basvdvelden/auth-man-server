@@ -10,15 +10,15 @@ import javax.persistence.Table;
 @Table(name = "google_user")
 public class GoogleUser extends User {
     @Column(name = "code")
-    private Integer code;
+    private String code;
 
     public GoogleUser() { }
 
-    public Integer getCode() {
+    public String getCode() {
         return code;
     }
 
-    public void setCode(Integer code) {
+    public void setCode(String code) {
         this.code = code;
     }
 }

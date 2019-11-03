@@ -33,9 +33,19 @@ public class UserController {
         service.register(form);
     }
 
-    @PostMapping("/native/authenticate")
+    @PostMapping("/authenticate/native")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public String authenticate(HttpServletResponse response, NativeUserAuthForm form) throws Exception {
+    public String authenticateNative(HttpServletResponse response, NativeUserAuthForm form) throws Exception {
+        AuthenticateResponse auth = service.authenticate(form);
+
+        response.setHeader(SecurityConstants.TOKEN_HEADER, SecurityConstants.TOKEN_PREFIX + auth.getAccessTokenValue().getValue());
+
+        return auth.getRefreshTokenValue().getValue();
+    }
+
+    @PostMapping("/authenticate/google")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public String authenticateGoogle(HttpServletResponse response, NativeUserAuthForm form) throws Exception {
         AuthenticateResponse auth = service.authenticate(form);
 
         response.setHeader(SecurityConstants.TOKEN_HEADER, SecurityConstants.TOKEN_PREFIX + auth.getAccessTokenValue().getValue());

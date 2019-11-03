@@ -26,6 +26,7 @@ public class NativeUserAuthForm {
         this.password = password;
     }
 
+    // TODO: username must be email and password must have certain pattern
     public void validate() throws FormInvalidException {
         boolean valid = username != null && password != null;
         if (!valid) {

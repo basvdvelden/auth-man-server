@@ -21,11 +21,28 @@ public class AccessTokenService {
 
     public AccessTokenService() {}
 
-    public AccessTokenValue getAccessToken(User user) {
-        return getAccessToken(user.getUuid());
+    public AccessTokenValue createAccessToken(User user) {
+        return createAccessToken(user.getUuid());
     }
 
-    public AccessTokenValue getAccessToken(UUID uuid) {
+    public AccessTokenValue refresh(AccessTokenValue accessTokenValue) {
+        byte[] signingKey = SecurityConstants.JWT_SECRET.getBytes();
+        Jws<Claims> parsedToken = Jwts.parser()
+                .setSigningKey(signingKey)
+                .parseClaimsJws(accessTokenValue.getValue());
+        String uuid = parsedToken.getBody().getSubject();
+        return createAccessToken(UUID.fromString(uuid));
+    }
+
+    public String extractSubject(AccessTokenValue accessTokenValue) {
+        byte[] signingKey = SecurityConstants.JWT_SECRET.getBytes();
+        Jws<Claims> parsedToken = Jwts.parser()
+                .setSigningKey(signingKey)
+                .parseClaimsJws(accessTokenValue.getValue());
+        return parsedToken.getBody().getSubject();
+    }
+
+    private AccessTokenValue createAccessToken(UUID uuid) {
         byte[] signingKey = SecurityConstants.JWT_SECRET.getBytes();
         String jwt = Jwts.builder()
                 .signWith(Keys.hmacShaKeyFor(signingKey), SignatureAlgorithm.HS512)
@@ -37,22 +54,5 @@ public class AccessTokenService {
                 .claim("rol", Arrays.asList(ERole.TRIAL.name()))
                 .compact();
         return new AccessTokenValue(jwt);
-    }
-
-    public AccessTokenValue refresh(AccessTokenValue accessTokenValue) {
-        byte[] signingKey = SecurityConstants.JWT_SECRET.getBytes();
-        Jws<Claims> parsedToken = Jwts.parser()
-                .setSigningKey(signingKey)
-                .parseClaimsJws(accessTokenValue.getValue());
-        String uuid = parsedToken.getBody().getSubject();
-        return getAccessToken(UUID.fromString(uuid));
-    }
-
-    public String extractSubject(AccessTokenValue accessTokenValue) {
-        byte[] signingKey = SecurityConstants.JWT_SECRET.getBytes();
-        Jws<Claims> parsedToken = Jwts.parser()
-                .setSigningKey(signingKey)
-                .parseClaimsJws(accessTokenValue.getValue());
-        return parsedToken.getBody().getSubject();
     }
 }
