@@ -4,7 +4,7 @@ plugins {
     id 'org.springframework.boot' version '2.1.9.RELEASE'
 }
 
-group 'nl.management.finance.server'
+group 'nl.management.auth.server'
 version '1.0-SNAPSHOT'
 
 sourceCompatibility = 11
@@ -24,4 +24,6 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-impl:0.10.5'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.10.5'
     implementation 'com.google.api-client:google-api-client:1.30.4'
+
+    implementation 'redis.clients:jedis:3.1.0'
 }
