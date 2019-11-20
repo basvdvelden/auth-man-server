@@ -1,4 +1,4 @@
-package nl.management.auth.server.common.jwt;
+package nl.management.auth.server.user.jwt;
 
 import java.security.SecureRandom;
 import java.util.Locale;
@@ -16,7 +16,7 @@ public class RefreshTokenGenerator {
         return getRandomString();
     }
 
-    public static String getRandomString() {
+    private static String getRandomString() {
         for (int idx = 0; idx < BUFFER.length; ++idx)
             BUFFER[idx] = SYMBOLS[RANDOM.nextInt(SYMBOLS.length)];
         return new String(BUFFER);

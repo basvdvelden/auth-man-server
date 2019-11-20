@@ -1,7 +1,7 @@
 package nl.management.auth.server.user;
 
 import nl.management.auth.server.exceptions.JWTParsingFailedException;
-import nl.management.auth.server.security.constants.SecurityConstants;
+import nl.management.auth.server.user.jwt.TokenConstants;
 import nl.management.auth.server.user.models.dtos.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,20 +28,8 @@ public class UserController {
 
     @PostMapping("/{uuid}/logout")
     public void logout(@PathVariable("uuid") UUID uuid, HttpServletRequest request) throws JWTParsingFailedException {
-        String accessToken = request.getHeader(SecurityConstants.TOKEN_HEADER).replace(SecurityConstants.TOKEN_PREFIX, "");
+        String accessToken = request.getHeader(TokenConstants.TOKEN_HEADER).replace(TokenConstants.TOKEN_PREFIX, "");
         service.logout(uuid, accessToken);
-    }
-
-    @PostMapping("/{uuid}/pin")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void registerPin(@PathVariable("uuid") UUID uuid, PinCodeReqDto dto) throws Exception {
-        service.registerPin(uuid, dto);
-    }
-
-    @PostMapping("/{uuid}/pin/verify")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public void verifyPin(@PathVariable("uuid") UUID uuid, PinCodeReqDto dto) throws Exception {
-        service.verifyPin(uuid, dto);
     }
 
     @PostMapping("/authenticate/native")
@@ -59,7 +47,7 @@ public class UserController {
     @PostMapping("/{uuid}/token/refresh")
     @ResponseStatus(HttpStatus.CREATED)
     public TokenRefreshResDto refreshToken(@PathVariable("uuid") UUID uuid, RefreshTokenReqDto dto, HttpServletRequest request) throws Exception {
-        String accessToken = request.getHeader(SecurityConstants.TOKEN_HEADER).replace(SecurityConstants.TOKEN_PREFIX, "");
+        String accessToken = request.getHeader(TokenConstants.TOKEN_HEADER).replace(TokenConstants.TOKEN_PREFIX, "");
         return service.refreshToken(uuid, dto, accessToken);
     }
 

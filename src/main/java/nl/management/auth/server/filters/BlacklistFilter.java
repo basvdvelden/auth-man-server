@@ -1,7 +1,7 @@
-package nl.management.auth.server.security.filters;
+package nl.management.auth.server.filters;
 
-import nl.management.auth.server.common.JedisService;
-import nl.management.auth.server.security.constants.SecurityConstants;
+import nl.management.auth.server.user.jwt.JedisService;
+import nl.management.auth.server.user.jwt.TokenConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,9 +32,9 @@ public class BlacklistFilter extends GenericFilterBean {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
-        String token = req.getHeader(SecurityConstants.TOKEN_HEADER);
+        String token = req.getHeader(TokenConstants.TOKEN_HEADER);
         if (token != null && shouldFilter(req)) {
-            token = token.replace(SecurityConstants.TOKEN_PREFIX, "");
+            token = token.replace(TokenConstants.TOKEN_PREFIX, "");
             boolean blacklisted = jedisService.isBlacklisted(token);
             if (blacklisted) {
                 LOG.warn("Blacklisted JWT: {}", token);

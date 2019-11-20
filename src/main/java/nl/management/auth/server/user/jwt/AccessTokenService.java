@@ -1,11 +1,9 @@
-package nl.management.auth.server.common.jwt;
+package nl.management.auth.server.user.jwt;
 
 import io.jsonwebtoken.*;
-import nl.management.auth.server.common.JedisService;
 import nl.management.auth.server.exceptions.AccessTokenCreationFailedException;
 import nl.management.auth.server.exceptions.JWTParsingFailedException;
-import nl.management.auth.server.security.ERole;
-import nl.management.auth.server.security.constants.SecurityConstants;
+import nl.management.auth.server.user.models.entities.ERole;
 import nl.management.auth.server.user.models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +28,7 @@ import java.util.UUID;
 public class AccessTokenService {
     private static final Logger LOG = LoggerFactory.getLogger(AccessTokenService.class);
     // 240 hours
-    private final static Integer EXPIRATION = 100000;
+    private final static Integer EXPIRATION = 280000;
 
     private final JedisService jedisService;
 
@@ -48,11 +46,6 @@ public class AccessTokenService {
         if (exp > System.currentTimeMillis()) {
             jedisService.addToBlacklist(exp, accessToken);
         }
-    }
-
-    public String extractSub(String accessToken) throws JWTParsingFailedException {
-        Jws<Claims> parsedToken = getClaims(accessToken);
-        return parsedToken.getBody().getSubject();
     }
 
     private Long extractExp(String accessToken) throws JWTParsingFailedException {
@@ -89,9 +82,9 @@ public class AccessTokenService {
             PrivateKey privateKey = kf.generatePrivate(keySpec);
             String jwt = Jwts.builder()
                     .signWith(privateKey, SignatureAlgorithm.RS512)
-                    .setHeaderParam("typ", SecurityConstants.TOKEN_TYPE)
-                    .setIssuer(SecurityConstants.TOKEN_ISSUER)
-                    .setAudience(SecurityConstants.TOKEN_AUDIENCE)
+                    .setHeaderParam("typ", TokenConstants.TOKEN_TYPE)
+                    .setIssuer(TokenConstants.TOKEN_ISSUER)
+                    .setAudience(TokenConstants.TOKEN_AUDIENCE)
                     .setSubject(uuid.toString())
                     .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
                     .claim("rol", Arrays.asList(ERole.TRIAL.name()))

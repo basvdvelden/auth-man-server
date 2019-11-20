@@ -1,6 +1,6 @@
 package nl.management.auth.server.config;
 
-import nl.management.auth.server.common.JedisService;
+import nl.management.auth.server.user.jwt.JedisService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,9 +21,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.cors().and()
                 .csrf().disable()
-//                .addFilterAfter(new BlacklistFilter(jedisService()), BasicAuthenticationFilter.class)
-//                .addFilterAfter(new JWTFilter(), BlacklistFilter.class)
-//                .addFilterAfter(new PinVerificationFilter(), BlacklistFilter.class)
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }

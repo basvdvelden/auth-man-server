@@ -1,11 +1,11 @@
-package nl.management.auth.server.security.filters;
+package nl.management.auth.server.filters;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SignatureException;
-import nl.management.auth.server.security.constants.SecurityConstants;
+import nl.management.auth.server.user.jwt.TokenConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -43,19 +43,20 @@ public class JWTFilter extends GenericFilterBean {
             filterChain.doFilter(request, response);
             return;
         }
-        String token = req.getHeader(SecurityConstants.TOKEN_HEADER);
+        String token = req.getHeader(TokenConstants.TOKEN_HEADER);
 
-        if (token != null && !token.trim().isEmpty() && token.startsWith(SecurityConstants.TOKEN_PREFIX)) {
+        if (token != null && !token.trim().isEmpty() && token.startsWith(TokenConstants.TOKEN_PREFIX)) {
             try {
                 try (InputStream publicKeyStream = getClass().getClassLoader().getResourceAsStream("jwt/auth-public.der")) {
                     assert publicKeyStream != null;
 
                     X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyStream.readAllBytes());
                     KeyFactory kf = KeyFactory.getInstance("RSA");
-                    PublicKey publicKey = kf.generatePublic(keySpec); // Throws exception
+                    PublicKey publicKey = kf.generatePublic(keySpec);
+                    LOG.debug("parsing jwt...");
                     Jwts.parser()
                             .setSigningKey(publicKey)
-                            .parseClaimsJws(token.replace(SecurityConstants.TOKEN_PREFIX, ""));
+                            .parseClaimsJws(token.replace(TokenConstants.TOKEN_PREFIX, ""));
 
                     filterChain.doFilter(request, response);
                     return;

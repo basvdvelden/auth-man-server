@@ -16,8 +16,6 @@ public class User {
     private String username;
     @Column(nullable = false)
     private String name;
-    @Column
-    private String pin;
     @Column(name = "active", columnDefinition = "tinyint(1) default 0")
     private boolean active;
 
@@ -44,14 +42,6 @@ public class User {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getPin() {
-        return pin;
-    }
-
-    public void setPin(String pin) {
-        this.pin = pin;
     }
 
     public boolean isActive() {

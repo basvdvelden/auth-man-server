@@ -1,4 +1,4 @@
-package nl.management.auth.server.common.jwt.models;
+package nl.management.auth.server.user.jwt;
 
 import nl.management.auth.server.user.models.entities.User;
 import org.hibernate.annotations.NaturalId;

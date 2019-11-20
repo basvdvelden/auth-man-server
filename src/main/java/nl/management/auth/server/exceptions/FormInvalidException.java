@@ -8,7 +8,4 @@ public class FormInvalidException extends Exception {
     public FormInvalidException(String msg) {
         super(msg);
     }
-
-    public FormInvalidException() {
-    }
 }

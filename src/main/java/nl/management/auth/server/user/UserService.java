@@ -4,12 +4,12 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import nl.management.auth.server.common.jwt.AccessTokenService;
-import nl.management.auth.server.common.jwt.RefreshTokenService;
 import nl.management.auth.server.exceptions.*;
 import nl.management.auth.server.user.dao.GoogleUserRepository;
 import nl.management.auth.server.user.dao.NativeUserRepository;
 import nl.management.auth.server.user.dao.UserRepository;
+import nl.management.auth.server.user.jwt.AccessTokenService;
+import nl.management.auth.server.user.jwt.RefreshTokenService;
 import nl.management.auth.server.user.models.dtos.*;
 import nl.management.auth.server.user.models.entities.GoogleUser;
 import nl.management.auth.server.user.models.entities.NativeUser;
@@ -62,34 +62,6 @@ public class UserService {
 
         NativeUser nativeUser = NativeUser.fromRegistrationDto(dto, encoder);
         nativeUserRepository.save(nativeUser);
-    }
-
-    public void registerPin(@NonNull UUID uuid, @NonNull PinCodeReqDto pinCode) throws InvalidPinCodeException, UUIDInvalidException {
-        pinCode.validate();
-
-        User user = findAnyUserByUUIDAndActiveFalse(uuid);
-        if (user == null) {
-            LOG.warn("Could not register pin because no user for uuid: {} could be found!", uuid);
-            throw new UUIDInvalidException(java.lang.String.format("No user could be found with uuid: %s", uuid.toString()));
-        }
-        user.setPin(encoder.encode(pinCode.getPin()));
-        user.setActive(true);
-        saveAnyUser(user);
-    }
-
-    public void verifyPin(@NonNull UUID uuid, @NonNull PinCodeReqDto pinCode) throws UUIDInvalidException,
-            PinVerificationFailedException, InvalidPinCodeException {
-
-        pinCode.validate();
-        User user = findAnyUserByUUIDAndActiveTrue(uuid);
-        if (user == null) {
-            LOG.warn("Could not verify pin because no active user for uuid: {} could be found!", uuid);
-            throw new UUIDInvalidException(java.lang.String.format("Could not find an active user with uuid: %s", uuid.toString()));
-        }
-        if (!encoder.matches(pinCode.getPin(), user.getPin())) {
-            LOG.warn("Could not verify pin because the pin code was incorrect!");
-            throw new PinVerificationFailedException("Pin code was incorrect.");
-        }
     }
 
     @Nullable
@@ -181,30 +153,6 @@ public class UserService {
             user = nativeUserRepository.findByUuid(uuid);
         }
         return user;
-    }
-
-    private User findAnyUserByUUIDAndActiveFalse(UUID uuid) {
-        User user = googleUserRepository.findByUuidAndActiveFalse(uuid);
-        if (user == null) {
-            user = nativeUserRepository.findByUuidAndActiveFalse(uuid);
-        }
-        return user;
-    }
-
-    private User findAnyUserByUUIDAndActiveTrue(UUID uuid) {
-        User user = googleUserRepository.findByUuidAndActiveTrue(uuid);
-        if (user == null) {
-            user = nativeUserRepository.findByUuidAndActiveTrue(uuid);
-        }
-        return user;
-    }
-
-    private void saveAnyUser(User user) {
-        try {
-            googleUserRepository.save((GoogleUser)user);
-        } catch (ClassCastException e) {
-            nativeUserRepository.save((NativeUser)user);
-        }
     }
 
     private void register(GoogleUserAuthReqDto dto) throws AuthenticationFailedException, GeneralSecurityException, IOException {

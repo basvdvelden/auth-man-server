@@ -1,8 +1,7 @@
 package nl.management.auth.server.config;
 
-import nl.management.auth.server.security.filters.BlacklistFilter;
-import nl.management.auth.server.security.filters.JWTFilter;
-import nl.management.auth.server.security.filters.PinVerificationFilter;
+import nl.management.auth.server.filters.BlacklistFilter;
+import nl.management.auth.server.filters.JWTFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -16,18 +15,6 @@ public class FilterConfiguration {
 
     @Autowired
     private JWTFilter jwtFilter;
-
-    @Autowired
-    private PinVerificationFilter pinVerificationFilter;
-
-    @Bean
-    public FilterRegistrationBean<PinVerificationFilter> filterRegistrationBean() {
-        FilterRegistrationBean<PinVerificationFilter> regBean = new FilterRegistrationBean<>();
-        regBean.setFilter(pinVerificationFilter);
-        regBean.setOrder(3);
-
-        return regBean;
-    }
 
     @Bean
     public FilterRegistrationBean<JWTFilter> jwtFilterRegistrationBean() {

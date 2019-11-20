@@ -1,6 +1,5 @@
-package nl.management.auth.server.common.jwt;
+package nl.management.auth.server.user.jwt;
 
-import nl.management.auth.server.common.jwt.models.RefreshToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

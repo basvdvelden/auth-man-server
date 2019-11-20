@@ -1,4 +1,4 @@
-package nl.management.auth.server.security;
+package nl.management.auth.server.user.models.entities;
 
 import org.springframework.security.core.GrantedAuthority;
 

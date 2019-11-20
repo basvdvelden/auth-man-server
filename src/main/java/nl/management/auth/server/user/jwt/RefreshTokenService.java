@@ -1,6 +1,5 @@
-package nl.management.auth.server.common.jwt;
+package nl.management.auth.server.user.jwt;
 
-import nl.management.auth.server.common.jwt.models.RefreshToken;
 import nl.management.auth.server.exceptions.*;
 import nl.management.auth.server.user.models.dtos.AuthResDto;
 import nl.management.auth.server.user.models.dtos.RefreshTokenReqDto;
