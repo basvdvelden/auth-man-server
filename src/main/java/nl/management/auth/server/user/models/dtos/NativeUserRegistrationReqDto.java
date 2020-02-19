@@ -6,8 +6,6 @@ public class NativeUserRegistrationReqDto {
     private String username;
     private String password;
 
-    private final static String PASSWORD_VALIDATION_PATTERN = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*_?&]{8,}$";
-
     public NativeUserRegistrationReqDto() {
     }
 
@@ -35,7 +33,7 @@ public class NativeUserRegistrationReqDto {
     }
 
     private boolean passwordValid() {
-        return password.matches(PASSWORD_VALIDATION_PATTERN);
+        return true;
     }
 
     private boolean usernameValid() {

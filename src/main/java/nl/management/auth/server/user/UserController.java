@@ -1,10 +1,10 @@
 package nl.management.auth.server.user;
 
-import nl.management.auth.server.exceptions.JWTParsingFailedException;
 import nl.management.auth.server.user.jwt.TokenConstants;
 import nl.management.auth.server.user.models.dtos.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -22,37 +22,32 @@ public class UserController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public void register(NativeUserRegistrationReqDto dto) throws Exception {
+    public void register(NativeUserRegistrationReqDto dto) {
         service.register(dto);
     }
 
     @PostMapping("/{uuid}/logout")
-    public void logout(@PathVariable("uuid") UUID uuid, HttpServletRequest request) throws JWTParsingFailedException {
+    public void logout(@PathVariable("uuid") UUID uuid, HttpServletRequest request) {
         String accessToken = request.getHeader(TokenConstants.TOKEN_HEADER).replace(TokenConstants.TOKEN_PREFIX, "");
         service.logout(uuid, accessToken);
     }
 
     @PostMapping("/authenticate/native")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public AuthResDto authenticateNative(NativeUserAuthReqDto dto) throws Exception {
+    public AuthDto authenticateNative(NativeUserAuthReqDto dto) {
         return service.authenticate(dto);
     }
 
     @PostMapping("/authenticate/google")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public AuthResDto authenticateGoogle(GoogleUserAuthReqDto dto) throws Exception {
+    public AuthDto authenticateGoogle(GoogleUserAuthReqDto dto) throws Exception {
         return service.authenticate(dto);
     }
 
-    @PostMapping("/{uuid}/token/refresh")
+    @PostMapping(value = "/{uuid}/token/refresh", consumes = MediaType.TEXT_PLAIN_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public TokenRefreshResDto refreshToken(@PathVariable("uuid") UUID uuid, RefreshTokenReqDto dto, HttpServletRequest request) throws Exception {
+    public TokenRefreshResDto refreshToken(@PathVariable("uuid") UUID uuid, @RequestBody String refreshToken, HttpServletRequest request) {
         String accessToken = request.getHeader(TokenConstants.TOKEN_HEADER).replace(TokenConstants.TOKEN_PREFIX, "");
-        return service.refreshToken(uuid, dto, accessToken);
-    }
-
-    @GetMapping("/username")
-    public String dummy() {
-        return "basvdvelden13@gmail.com";
+        return service.refreshToken(uuid, refreshToken, accessToken);
     }
 }

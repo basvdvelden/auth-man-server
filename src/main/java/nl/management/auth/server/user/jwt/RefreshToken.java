@@ -1,6 +1,5 @@
 package nl.management.auth.server.user.jwt;
 
-import nl.management.auth.server.user.models.entities.User;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.Type;
 import org.springframework.lang.NonNull;
@@ -65,11 +64,11 @@ public class RefreshToken {
         this.id = id;
     }
 
-    public static RefreshToken fromStringAndUser(@NonNull String accessToken, @NonNull String token, @NonNull User user) {
+    public static RefreshToken fromStringAndUser(@NonNull String accessToken, @NonNull String token, @NonNull UUID userId) {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setAccessToken(accessToken);
         refreshToken.setToken(token);
-        refreshToken.setUserUuid(user.getUuid());
+        refreshToken.setUserUuid(userId);
         refreshToken.setExpires(LocalDateTime.now().plusYears(1L));
 
         return refreshToken;

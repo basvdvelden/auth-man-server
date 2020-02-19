@@ -2,10 +2,12 @@ package nl.management.auth.server.user.models.dtos;
 
 public class TokenRefreshResDto {
     private String accessToken;
+    private Long expiresAt;
     private String refreshToken;
 
-    public TokenRefreshResDto(String accessToken, String refreshToken) {
+    public TokenRefreshResDto(String accessToken, Long expiresAt, String refreshToken) {
         setAccessToken(accessToken);
+        setExpiresAt(expiresAt);
         setRefreshToken(refreshToken);
     }
 
@@ -17,6 +19,14 @@ public class TokenRefreshResDto {
         this.accessToken = accessToken;
     }
 
+    public Long getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(Long expiresAt) {
+        this.expiresAt = expiresAt;
+    }
+
     public String getRefreshToken() {
         return refreshToken;
     }
@@ -24,4 +34,5 @@ public class TokenRefreshResDto {
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
     }
+
 }

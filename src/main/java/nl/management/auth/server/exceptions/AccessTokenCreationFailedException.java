@@ -1,6 +1,6 @@
 package nl.management.auth.server.exceptions;
 
-public class AccessTokenCreationFailedException extends Exception {
+public class AccessTokenCreationFailedException extends RuntimeException {
     public AccessTokenCreationFailedException(String msg) {
         super(msg);
     }

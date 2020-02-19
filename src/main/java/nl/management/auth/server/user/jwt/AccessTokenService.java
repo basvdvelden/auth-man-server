@@ -4,7 +4,6 @@ import io.jsonwebtoken.*;
 import nl.management.auth.server.exceptions.AccessTokenCreationFailedException;
 import nl.management.auth.server.exceptions.JWTParsingFailedException;
 import nl.management.auth.server.user.models.entities.ERole;
-import nl.management.auth.server.user.models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +26,9 @@ import java.util.UUID;
 @Service
 public class AccessTokenService {
     private static final Logger LOG = LoggerFactory.getLogger(AccessTokenService.class);
-    // 240 hours
-    private final static Integer EXPIRATION = 280000;
+
+    // 10 sec
+    private final static Integer EXPIRATION = 1000000;
 
     private final JedisService jedisService;
 
@@ -37,18 +37,36 @@ public class AccessTokenService {
         this.jedisService = jedisService;
     }
 
-    public String createAccessToken(User user) throws AccessTokenCreationFailedException {
-        return createAccessToken(user.getUuid());
+    String createAccessToken(UUID userId) {
+        try (InputStream privateKeyStream = Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("jwt/auth-private.der"))) {
+
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyStream.readAllBytes());
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            PrivateKey privateKey = kf.generatePrivate(keySpec);
+            String jwt = Jwts.builder()
+                    .signWith(privateKey, SignatureAlgorithm.RS512)
+                    .setHeaderParam("typ", TokenConstants.TOKEN_TYPE)
+                    .setIssuer(TokenConstants.TOKEN_ISSUER)
+                    .setAudience(TokenConstants.TOKEN_AUDIENCE)
+                    .setSubject(userId.toString())
+                    .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                    .claim("rol", Arrays.asList(ERole.TRIAL.name()))
+                    .compact();
+            return jwt;
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+            LOG.error("Exception thrown while creating access token. ERROR:", e);
+            throw new AccessTokenCreationFailedException("Could not create access token!");
+        }
     }
 
-    public void invalidate(String accessToken) throws JWTParsingFailedException {
+    void invalidate(String accessToken) {
         double exp = extractExp(accessToken).doubleValue();
         if (exp > System.currentTimeMillis()) {
             jedisService.addToBlacklist(exp, accessToken);
         }
     }
 
-    private Long extractExp(String accessToken) throws JWTParsingFailedException {
+    Long extractExp(String accessToken) {
         Jws<Claims> parsedToken;
         try {
             parsedToken = getClaims(accessToken);
@@ -58,7 +76,7 @@ public class AccessTokenService {
         return parsedToken.getBody().getExpiration().getTime();
     }
 
-    private Jws<Claims> getClaims(String accessToken) throws JWTParsingFailedException {
+    private Jws<Claims> getClaims(String accessToken) {
         try (InputStream publicKeyStream = getClass().getClassLoader().getResourceAsStream("jwt/auth-public.der")) {
             assert publicKeyStream != null;
 
@@ -71,28 +89,6 @@ public class AccessTokenService {
         } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             LOG.error("Exception was thrown while parsing jwt to get claims. ERROR:", e);
             throw new JWTParsingFailedException("Error parsing jwt", e);
-        }
-    }
-
-    private String createAccessToken(UUID uuid) throws AccessTokenCreationFailedException {
-        try (InputStream privateKeyStream = Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("jwt/auth-private.der"))) {
-
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyStream.readAllBytes());
-            KeyFactory kf = KeyFactory.getInstance("RSA");
-            PrivateKey privateKey = kf.generatePrivate(keySpec);
-            String jwt = Jwts.builder()
-                    .signWith(privateKey, SignatureAlgorithm.RS512)
-                    .setHeaderParam("typ", TokenConstants.TOKEN_TYPE)
-                    .setIssuer(TokenConstants.TOKEN_ISSUER)
-                    .setAudience(TokenConstants.TOKEN_AUDIENCE)
-                    .setSubject(uuid.toString())
-                    .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
-                    .claim("rol", Arrays.asList(ERole.TRIAL.name()))
-                    .compact();
-            return jwt;
-        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
-            LOG.error("Exception thrown while creating access token. ERROR:", e);
-            throw new AccessTokenCreationFailedException("Could not create access token!");
         }
     }
 }

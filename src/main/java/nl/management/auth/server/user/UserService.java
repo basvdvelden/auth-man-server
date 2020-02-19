@@ -4,16 +4,17 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import nl.management.auth.server.exceptions.*;
+import nl.management.auth.server.exceptions.AuthenticationFailedException;
+import nl.management.auth.server.exceptions.InvalidRefreshTokenException;
+import nl.management.auth.server.exceptions.RefreshTokenStolenException;
+import nl.management.auth.server.exceptions.UsernameExistsException;
 import nl.management.auth.server.user.dao.GoogleUserRepository;
 import nl.management.auth.server.user.dao.NativeUserRepository;
 import nl.management.auth.server.user.dao.UserRepository;
-import nl.management.auth.server.user.jwt.AccessTokenService;
-import nl.management.auth.server.user.jwt.RefreshTokenService;
+import nl.management.auth.server.user.jwt.TokenService;
 import nl.management.auth.server.user.models.dtos.*;
 import nl.management.auth.server.user.models.entities.GoogleUser;
 import nl.management.auth.server.user.models.entities.NativeUser;
-import nl.management.auth.server.user.models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,69 +33,53 @@ import java.util.UUID;
 @Service
 public class UserService {
     private static final Logger LOG = LoggerFactory.getLogger(UserService.class);
-    private static final java.lang.String GOOGLE_PROPERTIES = "google.properties";
+    private static final String GOOGLE_PROPERTIES = "google.properties";
 
     private final UserRepository<NativeUser, UUID> nativeUserRepository;
     private final UserRepository<GoogleUser, UUID> googleUserRepository;
     private final PasswordEncoder encoder;
-    private final RefreshTokenService refreshTokenService;
-    private final AccessTokenService accessTokenService;
+    private final TokenService tokenService;
 
     @Autowired
     public UserService(
             NativeUserRepository nativeUserRepository,
             GoogleUserRepository googleUserRepository,
             PasswordEncoder encoder,
-            AccessTokenService accessTokenService,
-            RefreshTokenService refreshTokenService
+            TokenService tokenService
     ) {
-
         this.nativeUserRepository = nativeUserRepository;
         this.googleUserRepository = googleUserRepository;
         this.encoder = encoder;
-        this.accessTokenService = accessTokenService;
-        this.refreshTokenService = refreshTokenService;
+        this.tokenService = tokenService;
     }
 
-    public void register(@NonNull NativeUserRegistrationReqDto dto) throws Exception {
+    void register(@NonNull NativeUserRegistrationReqDto dto) {
         dto.validate();
         verifyUsername(dto.getUsername());
-
         NativeUser nativeUser = NativeUser.fromRegistrationDto(dto, encoder);
         nativeUserRepository.save(nativeUser);
     }
 
-    @Nullable
-    public AuthResDto authenticate(@NonNull NativeUserAuthReqDto dto) throws
-            AuthenticationFailedException,
-            FormInvalidException,
-            AccessTokenCreationFailedException {
-
+    @NonNull
+    AuthDto authenticate(@NonNull NativeUserAuthReqDto dto) {
         dto.validate();
-
         NativeUser nativeUser = nativeUserRepository.findByUsername(dto.getUsername());
         if (nativeUser != null) {
             verifyPassword(dto, nativeUser);
 
-            boolean loggedIn = isLoggedIn(nativeUser);
-            if (loggedIn) {
-                return null;
+            if (tokenService.isLoggedIn(nativeUser.getUuid())) {
+                tokenService.logout(nativeUser.getUuid());
             }
-
-            return refreshTokenService.authenticate(nativeUser);
+            AuthDto authDto = new AuthDto(nativeUser.getName(), nativeUser.getUuid(), nativeUser.isActive(), nativeUser.getUsername());
+            return tokenService.authenticate(authDto);
         } else {
             LOG.warn("Authentication failed because username could not be found!");
             throw new AuthenticationFailedException("Username not found!");
         }
     }
 
-    public AuthResDto authenticate(@NonNull GoogleUserAuthReqDto form) throws
-            AuthenticationFailedException,
-            FormInvalidException,
-            GeneralSecurityException,
-            AccessTokenCreationFailedException,
-            IOException {
-
+    @NonNull
+    AuthDto authenticate(@NonNull GoogleUserAuthReqDto form) throws GeneralSecurityException, IOException {
         form.validate();
         GoogleUser googleUser = googleUserRepository.findByUsername(form.getUsername());
 
@@ -102,36 +87,22 @@ public class UserService {
             register(form);
             googleUser = googleUserRepository.findByUsername(form.getUsername());
         } else {
-            boolean loggedIn = isLoggedIn(googleUser);
-            if (loggedIn) {
-                return null;
+            if (tokenService.isLoggedIn(googleUser.getUuid())) {
+                tokenService.logout(googleUser.getUuid());
             }
         }
-        return refreshTokenService.authenticate(googleUser);
+        AuthDto authDto = new AuthDto(googleUser.getName(), googleUser.getUuid(), googleUser.isActive(), googleUser.getUsername());
+        return tokenService.authenticate(authDto);
     }
 
-    public void logout(@NonNull UUID uuid, @NonNull String accessToken) throws JWTParsingFailedException {
-        try {
-            refreshTokenService.deleteForUUID(uuid);
-        } catch (RefreshTokenDoesNotExistForGivenUUIDException ignored) {
-        }
-
-        accessTokenService.invalidate(accessToken);
+    void logout(@NonNull UUID uuid, @NonNull String accessToken) {
+        tokenService.logout(uuid, accessToken);
     }
 
-    public TokenRefreshResDto refreshToken(UUID uuid, RefreshTokenReqDto dto, String accessToken) throws
-            RefreshTokenExpiredException,
-            InvalidRefreshTokenException,
-            RefreshTokenDoesNotExistForGivenUUIDException,
-            InvalidAccessTokenException,
-            AccessTokenCreationFailedException,
-            JWTParsingFailedException {
-
-        User user = findAnyUser(uuid);
-        String newAccessToken = accessTokenService.createAccessToken(user);
-        accessTokenService.invalidate(accessToken);
+    @Nullable
+    TokenRefreshResDto refreshToken(UUID uuid, String refreshToken, String accessToken) {
         try {
-            return refreshTokenService.refresh(newAccessToken, uuid, dto, accessToken);
+            return tokenService.refresh(accessToken, refreshToken, uuid);
         } catch (RefreshTokenStolenException e) {
             LOG.warn("A refresh token was stolen from user with uuid: {} err msg: {}", uuid.toString(), e.getMessage());
             logout(uuid, accessToken);
@@ -139,7 +110,7 @@ public class UserService {
         }
     }
 
-    private void verifyPassword(@NonNull NativeUserAuthReqDto dto, @NonNull NativeUser user) throws AuthenticationFailedException {
+    private void verifyPassword(@NonNull NativeUserAuthReqDto dto, @NonNull NativeUser user) {
         boolean matches = encoder.matches(dto.getPassword(), user.getPassword());
         if (!matches) {
             LOG.warn("Authentication failed because the password was incorrect!");
@@ -147,15 +118,7 @@ public class UserService {
         }
     }
 
-    private User findAnyUser(UUID uuid) {
-        User user = googleUserRepository.findByUuid(uuid);
-        if (user == null) {
-            user = nativeUserRepository.findByUuid(uuid);
-        }
-        return user;
-    }
-
-    private void register(GoogleUserAuthReqDto dto) throws AuthenticationFailedException, GeneralSecurityException, IOException {
+    private void register(GoogleUserAuthReqDto dto) throws GeneralSecurityException, IOException {
         GoogleIdToken idToken = verifyIdToken(dto.getIdToken());
 
         GoogleIdToken.Payload payload = idToken.getPayload();
@@ -163,7 +126,8 @@ public class UserService {
         googleUserRepository.save(user);
     }
 
-    private GoogleIdToken verifyIdToken(String idToken) throws IOException, GeneralSecurityException, AuthenticationFailedException {
+    private GoogleIdToken verifyIdToken(String idToken) throws IOException, GeneralSecurityException {
+        // TODO: needs work
         Properties properties = new Properties();
         properties.load(Objects.requireNonNull(this.getClass().getClassLoader().getResourceAsStream(GOOGLE_PROPERTIES)));
         String clientId = properties.getProperty("client-id");
@@ -180,16 +144,7 @@ public class UserService {
         return googleIdToken;
     }
 
-    private boolean isLoggedIn(User user) {
-        try {
-            refreshTokenService.getRefreshToken(user.getUuid());
-            return true;
-        } catch (RefreshTokenDoesNotExistForGivenUUIDException ignored) {
-            return false;
-        }
-    }
-
-    private void verifyUsername(String username) throws UsernameExistsException {
+    private void verifyUsername(String username) {
         NativeUser nativeUser = nativeUserRepository.findByUsername(username);
         if (nativeUser != null) {
             LOG.warn("Username: {} already exists!", username);

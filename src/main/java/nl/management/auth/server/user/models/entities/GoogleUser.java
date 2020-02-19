@@ -30,7 +30,8 @@ public class GoogleUser extends User {
         result.setGoogleUserId(payload.getSubject());
         result.setUsername(payload.getEmail());
         result.setUuid(uuid);
-        result.setActive(false);
+        // google users dont need to activate by verifying email
+        result.setActive(true);
         result.setName((String)payload.get("name"));
         return result;
     }

@@ -50,6 +50,7 @@ public class JWTFilter extends GenericFilterBean {
                 try (InputStream publicKeyStream = getClass().getClassLoader().getResourceAsStream("jwt/auth-public.der")) {
                     assert publicKeyStream != null;
 
+                    // TODO: should use token service
                     X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyStream.readAllBytes());
                     KeyFactory kf = KeyFactory.getInstance("RSA");
                     PublicKey publicKey = kf.generatePublic(keySpec);
